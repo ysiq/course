@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第10课时：Node.js 与 Electron 桌面应用开发</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: -apple-system, "Microsoft YaHei", sans-serif; background: #0f0f1a; color: #e0e0e0; display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar { position: fixed; top: 0; left: 0; width: 240px; height: 100vh; background: #12121e; border-right: 1px solid #2a2a4a; overflow-y: auto; padding: 20px 0; z-index: 100; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+.sidebar-title { padding: 0 20px 16px; font-size: 14px; color: #2ecc71; font-weight: bold; border-bottom: 1px solid #2a2a4a; margin-bottom: 8px; }
+.sidebar a { display: block; padding: 8px 20px; color: #999; text-decoration: none; font-size: 13px; transition: all 0.15s; border-left: 2px solid transparent; }
+.sidebar a:hover { color: #fff; background: #0d2810; }
+.sidebar a.active { color: #2ecc71; border-left-color: #2ecc71; background: #0d2810; }
+.sidebar .sec { padding: 10px 20px 4px; font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+.sidebar .sub { padding-left: 32px; font-size: 12px; }
+
+/* ── Main ── */
+.main { margin-left: 240px; flex: 1; min-height: 100vh; }
+.topbar { position: sticky; top: 0; z-index: 99; background: rgba(15,15,26,0.92); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); padding: 12px 40px; border-bottom: 1px solid #2a2a4a; display: flex; align-items: center; gap: 16px; }
+.topbar a { color: #2ecc71; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 4px; }
+.topbar a:hover { opacity: 0.8; }
+.topbar .sep { color: #444; }
+.topbar .loc { color: #888; font-size: 13px; }
+.content { padding: 40px 50px 80px; max-width: 900px; }
+
+/* ── Content Styles ── */
+.content h1 { font-size: 28px; color: #fff; margin-bottom: 24px; }
+.content h2 { font-size: 22px; color: #2ecc71; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #2a2a4a; }
+.content h3 { font-size: 18px; color: #fff; margin: 28px 0 12px; }
+.content p { line-height: 1.8; margin-bottom: 16px; color: #ccc; }
+.content ul, .content ol { margin: 0 0 16px 24px; line-height: 1.8; color: #ccc; }
+.content li { margin-bottom: 4px; }
+.content strong { color: #fff; }
+.content blockquote { border-left: 3px solid #2ecc71; padding: 10px 16px; margin: 16px 0; background: #0d2810; border-radius: 4px; color: #aaa; font-size: 14px; }
+.content blockquote strong { color: #2ecc71; }
+.content hr { border: none; border-top: 1px solid #2a2a4a; margin: 40px 0; }
+.content code { background: #1a1a2e; padding: 2px 6px; border-radius: 4px; font-size: 14px; color: #f7df1e; }
+.content pre { background: #12121e; border: 1px solid #2a2a4a; border-radius: 8px; padding: 16px 20px; margin: 16px 0; overflow-x: auto; }
+.content pre code { background: none; padding: 0; color: #aaf; }
+.content table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+.content th, .content td { border: 1px solid #2a2a4a; padding: 10px 14px; text-align: left; font-size: 14px; }
+.content th { background: #0d2810; color: #2ecc71; }
+.content td { color: #ccc; }
+.content img { max-width: 100%; border-radius: 8px; margin: 16px 0; border: 1px solid #2a2a4a; }
+.content .note { background: #0d2810; border-left: 3px solid #2ecc71; padding: 12px 16px; margin: 16px 0; border-radius: 4px; font-size: 14px; color: #aaa; }
+
+/* ── Scroll indicator ── */
+.content h2, .content h3 { scroll-margin-top: 60px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-title">第10课时</div>
+  <div class="sec">目录</div>
+  <a href="#goal">课时目标</a>
+  <div class="sec">第一部分</div>
+  <a href="#p1">Node.js 介绍</a>
+  <a href="#p1-1" class="sub">1.1 什么是 Node.js</a>
+  <a href="#p1-2" class="sub">1.2 安装 Node.js</a>
+  <a href="#p1-3" class="sub">1.3 npm 包管理器</a>
+  <a href="#p1-4" class="sub">1.4 package.json 结构</a>
+  <a href="#p1-5" class="sub">1.5 动手实验</a>
+  <div class="sec">第二部分</div>
+  <a href="#p2">Electron 介绍</a>
+  <a href="#p2-1" class="sub">2.1 什么是 Electron</a>
+  <a href="#p2-2" class="sub">2.2 Electron 架构</a>
+  <a href="#p2-3" class="sub">2.3 主进程 vs 渲染进程</a>
+  <a href="#p2-4" class="sub">2.4 Hello Electron</a>
+  <a href="#p2-5" class="sub">2.5 小结</a>
+  <div class="sec">第三部分</div>
+  <a href="#p3">编写 PCT-100 上位机</a>
+  <a href="#p3-1" class="sub">3.1 项目结构</a>
+  <a href="#p3-2" class="sub">3.2 初始化项目</a>
+  <a href="#p3-3" class="sub">3.3 package.json</a>
+  <a href="#p3-4" class="sub">3.4 项目文件说明</a>
+  <a href="#p3-5" class="sub">3.5 用 AI 生成代码</a>
+  <a href="#p3-6" class="sub">3.6 迭代开发</a>
+  <div class="sec">第四部分</div>
+  <a href="#p4">打包上位机为 exe</a>
+  <a href="#p4-1" class="sub">4.1 安装打包工具</a>
+  <a href="#p4-2" class="sub">4.2 更新配置</a>
+  <a href="#p4-3" class="sub">4.3 打包原理</a>
+  <a href="#p4-4" class="sub">4.4 执行打包</a>
+  <a href="#p4-5" class="sub">4.5 使用 exe</a>
+  <a href="#p4-6" class="sub">4.6 重要配置项</a>
+  <div class="sec">其他</div>
+  <a href="#faq">常见问题</a>
+  <a href="#summary">本课总结</a>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <a href="index.html">&larr; 返回主页</a>
+    <span class="sep">|</span>
+    <span class="loc">第10课时 · Node.js 与 Electron 桌面应用开发</span>
+  </div>
+
+  <div class="content">
+
+<h1 id="goal">第10课时：Node.js 与 Electron 桌面应用开发</h1>
+
+<blockquote><strong>课程总目标：</strong> 本课时接续第9课时的前端基础，从 Node.js 开始，到 Electron 联通前后端，最后打包成 PCT-100 上位机 exe。</blockquote>
+
+<h2 id="goal-sub">课时目标</h2>
+<ul>
+  <li>了解 Node.js 是什么、能做什么</li>
+  <li>动手完成一个 Node.js 小实验</li>
+  <li>理解 Electron 如何联通前端（HTML 界面）和后端（Node.js 系统功能）</li>
+  <li>编写 PCT-100 上位机代码</li>
+  <li>将上位机打包成 Windows 便携 exe</li>
+</ul>
+
+<hr>
+
+<h2 id="p1">第一部分：Node.js 介绍</h2>
+
+<h3 id="p1-1">1.1 什么是 Node.js</h3>
+<p>Node.js 是一个 <strong>JavaScript 运行时环境</strong>，让 JavaScript 可以脱离浏览器运行在服务器或桌面上。</p>
+<table>
+  <tr><th></th><th>浏览器中的 JS</th><th>Node.js 中的 JS</th></tr>
+  <tr><td>运行环境</td><td>Chrome/V8 引擎</td><td>独立 V8 引擎</td></tr>
+  <tr><td>可访问</td><td>DOM、BOM</td><td>文件系统、网络、进程</td></tr>
+  <tr><td>用途</td><td>网页交互</td><td>后端服务、工具脚本、桌面应用</td></tr>
+</table>
+
+<h3 id="p1-2">1.2 安装 Node.js</h3>
+<ol>
+  <li>访问 https://nodejs.org</li>
+  <li>下载 LTS 版本（左侧，长期支持版）</li>
+  <li>安装向导全部默认下一步</li>
+  <li>验证安装：</li>
+</ol>
+<img src="images/10-nodejs-install.png" alt="Node.js 安装验证">
+
+<h3 id="p1-3">1.3 npm 包管理器</h3>
+<p>npm（Node Package Manager）是 JavaScript 的"应用商店"，可以下载别人写好的代码包。</p>
+<p>以安装 MQTT 通信库为例：</p>
+<pre><code class="language-bash">npm init -y                  # 初始化项目，生成 package.json
+npm install mqtt             # 安装 mqtt 包（写入 dependencies）
+npm install --save-dev electron  # 安装 electron（写入 devDependencies）
+npm start                    # 运行 package.json 中 start 脚本</code></pre>
+<ul>
+  <li><code>npm install 包名</code> 将包下载到 <code>node_modules/</code>，并记录到 <code>dependencies</code>（运行时依赖）</li>
+  <li><code>npm install --save-dev 包名</code> 记录到 <code>devDependencies</code>（仅开发/打包需要）</li>
+  <li>每个项目都有独立的 <code>node_modules/</code>，互不干扰</li>
+</ul>
+
+<h3 id="p1-4">1.4 package.json 结构</h3>
+<p><code>package.json</code> 是项目的"身份证"和"说明书"，npm 通过它来识别项目和管理依赖。</p>
+<pre><code class="language-json">{
+  "name": "my-app",
+  "version": "1.0.0",
+  "description": "我的应用",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "mqtt": "^5.3.0"
+  }
+}</code></pre>
+<table>
+  <tr><th>字段</th><th>含义</th><th>说明</th></tr>
+  <tr><td><code>name</code></td><td>项目名称</td><td>不能有中文和空格，npm 包名唯一标识</td></tr>
+  <tr><td><code>version</code></td><td>版本号</td><td>语义化版本 <code>主版本.次版本.补丁</code></td></tr>
+  <tr><td><code>description</code></td><td>项目描述</td><td>可选，方便别人了解项目用途</td></tr>
+  <tr><td><code>main</code></td><td>入口文件</td><td><code>node .</code> 或 <code>npm start</code> 时执行的文件</td></tr>
+  <tr><td><code>scripts</code></td><td>自定义命令</td><td>用 <code>npm run xxx</code> 执行，<code>start</code> 可省略 <code>run</code></td></tr>
+  <tr><td><code>dependencies</code></td><td>运行时依赖</td><td>项目真正需要跑的包（如 mqtt）</td></tr>
+  <tr><td><code>devDependencies</code></td><td>开发依赖</td><td>开发/打包时才用的工具（如 electron）</td></tr>
+</table>
+
+<h3 id="p1-5">1.5 动手实验（举例：猜数字游戏）</h3>
+<p>此处只是一个示例项目，学生可以自选主题，用 AI 辅助生成自己的 Node.js 命令行程序。下面是猜数字游戏的参考实现，供理解代码结构用。</p>
+<p>创建项目：</p>
+<pre><code class="language-bash">mkdir guess-number
+cd guess-number
+npm init -y</code></pre>
+<p>编写 <code>index.js</code>：</p>
+<pre><code class="language-javascript">// 生成 1-100 的随机数
+var target = Math.floor(Math.random() * 100) + 1;
+var attempts = 0;
+
+console.log('猜数字游戏！猜一个 1-100 之间的数字。');
+
+// 标准输入读取
+process.stdin.on('data', function(data) {
+  var guess = parseInt(data.toString().trim(), 10);
+  attempts++;
+
+  if (isNaN(guess) || guess < 1 || guess > 100) {
+    console.log('请输入 1-100 之间的有效数字');
+  } else if (guess > target) {
+    console.log('太大了，再试试');
+  } else if (guess < target) {
+    console.log('太小了，再试试');
+  } else {
+    console.log('恭喜你猜对了！共用了 ' + attempts + ' 次');
+    process.exit(0);
+  }
+});</code></pre>
+<p>运行：</p>
+<pre><code class="language-bash">node index.js</code></pre>
+<img src="images/13-guess-number-run.png" alt="猜数字游戏运行效果">
+
+<hr>
+
+<h2 id="p2">第二部分：Electron 介绍</h2>
+
+<h3 id="p2-1">2.1 什么是 Electron</h3>
+<p>Electron 是一个框架，允许用 <strong>HTML + CSS + JavaScript</strong> 开发跨平台桌面应用。简单理解：</p>
+<pre><code>┌─────────────────────────────────────┐
+│         Electron 应用 (.exe)         │
+│  ┌───────────────────────────────┐  │
+│  │   Node.js 运行环境             │  │  ← 负责系统功能
+│  │   (读写文件、网络、MQTT)       │  │
+│  ├───────────────────────────────┤  │
+│  │   Chrome 浏览器内核 (Chromium)  │  │  ← 负责显示界面
+│  │   (渲染 HTML/CSS/JS 页面)      │  │
+│  └───────────────────────────────┘  │
+└─────────────────────────────────────┘</code></pre>
+
+<p><strong>一句话总结：</strong></p>
+<blockquote>Electron = 把 Node.js + 前端页面（HTML/CSS/JS）打包成 Windows / Mac / Linux 桌面软件的工具。</blockquote>
+
+<p><strong>三层拆解：</strong></p>
+<ul>
+  <li><strong>底层</strong> = Chrome 浏览器内核（负责显示前端页面）</li>
+  <li><strong>上层</strong> = Node.js 运行环境（负责读写文件、调用系统、操作硬件、网络通信）</li>
+  <li><strong>打包</strong> = 把这俩打包成 <code>.exe</code> / <code>.dmg</code> / <code>.deb</code></li>
+  <li><strong>结果</strong> = 你写的网页，变成了桌面软件</li>
+</ul>
+
+<p><strong>代表产品：</strong> VS Code、Slack、Discord、WhatsApp Desktop</p>
+
+<h3 id="p2-2">2.2 Electron 架构 —— 前后端如何联通</h3>
+<pre><code>┌─────────────────────────────────┐
+│         主进程 (main.js)          │
+│  - Node.js 全 API                │
+│  - 创建窗口、管理窗口             │
+│  - 访问文件、网络、MQTT          │
+└────────────┬────────────────────┘
+             │ IPC (进程间通信)
+┌────────────▼────────────────────┐
+│  preload.js (桥梁)               │
+│  contextBridge.exposeInMainWorld │
+└────────────┬────────────────────┘
+             │ window.mqttAPI.xxx()
+┌────────────▼────────────────────┐
+│        渲染进程 (index.html)      │
+│  - 普通 HTML/CSS/JS 页面         │
+│  - 不能直接 require('mqtt')      │
+│  - 通过 preload 间接调用主进程    │
+└─────────────────────────────────┘</code></pre>
+
+<p>关键理解：</p>
+<ul>
+  <li><strong>主进程</strong> = Node.js 后端，做系统级的事情（MQTT、文件、硬件）</li>
+  <li><strong>渲染进程</strong> = 前端页面，负责界面展示和用户交互</li>
+  <li><strong>preload.js</strong> = 桥梁，安全地把主进程的能力暴露给前端</li>
+  <li><strong>IPC</strong> = 进程间通信的通道</li>
+</ul>
+
+<h3 id="p2-3">2.3 主进程 vs 渲染进程</h3>
+<table>
+  <tr><th></th><th>主进程</th><th>渲染进程</th></tr>
+  <tr><td>数量</td><td>1 个</td><td>多个（每个窗口一个）</td></tr>
+  <tr><td>运行环境</td><td>Node.js 全 API</td><td>浏览器环境</td></tr>
+  <tr><td>能否 require</td><td>能</td><td>不能（除 preload）</td></tr>
+  <tr><td>职责</td><td>窗口管理、网络、系统</td><td>界面渲染、用户交互</td></tr>
+  <tr><td>通信方式</td><td>ipcMain.on / send</td><td>window.xxxAPI.xx()</td></tr>
+</table>
+
+<h3 id="p2-4">2.4 动手实验（举例：Hello Electron）</h3>
+<p>此处只是一个示例项目，学生可以自选主题，用 AI 辅助生成自己的第一个 Electron 应用。下面是一个 Hello World 窗口的参考实现，供理解 Electron 前后端联通方式用。</p>
+<p>创建项目：</p>
+<pre><code class="language-bash">mkdir hello-electron
+cd hello-electron
+npm init -y
+npm install --save-dev electron</code></pre>
+<p>编写 <code>main.js</code>（主进程）：</p>
+<pre><code class="language-javascript">const { app, BrowserWindow } = require('electron');
+
+app.whenReady().then(function() {
+  var win = new BrowserWindow({
+    width: 600,
+    height: 400,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+  win.loadFile('index.html');
+});</code></pre>
+<p>编写 <code>index.html</code>（渲染进程）：</p>
+<pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;&lt;meta charset="UTF-8"&gt;&lt;title&gt;Hello Electron&lt;/title&gt;&lt;/head&gt;
+&lt;body style="display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#0d2810;color:#fff;font-family:sans-serif;"&gt;
+  &lt;div style="text-align:center;"&gt;
+    &lt;h1 style="color:#2ecc71;"&gt;Hello Electron!&lt;/h1&gt;
+    &lt;p&gt;这是前端页面，由 Electron 渲染&lt;/p&gt;
+    &lt;p style="color:#888;font-size:14px;"&gt;底层是 Chrome 内核 + Node.js 运行时&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<p>配置 <code>package.json</code>：</p>
+<pre><code class="language-json">{
+  "name": "hello-electron",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}</code></pre>
+<p>运行（国内用户先设置镜像源，下载会快很多）：</p>
+<pre><code class="language-powershell">$env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
+npm start</code></pre>
+<div class="note">&x1f6c8; 第一次运行会自动下载 Electron 内核（约 50MB），下载完成后才会弹出窗口。这是正常现象，耐心等待即可。后续运行不再下载。</div>
+
+<p>你会看到一个桌面窗口，里面显示了你写的 HTML 页面。Electron 的核心工作就是 <strong>把你写的前端页面，变成一个真正的桌面窗口</strong>。</p>
+<img src="images/09-hello-electron.png" alt="Hello Electron 窗口">
+
+<h3 id="p2-5">2.5 小结</h3>
+<p>Electron 不是只有打包功能，它的核心作用是：</p>
+<ol>
+  <li>提供 <strong>Chrome 内核</strong> 渲染 HTML/CSS/JS → 显示界面</li>
+  <li>提供 <strong>Node.js 环境</strong> 运行 main.js → 做系统功能</li>
+  <li>通过 <strong>IPC + preload.js</strong> 让前后端安全通信</li>
+</ol>
+<p>接下来要写的 PCT-100 上位机，正是基于这个架构。</p>
+
+<hr>
+
+<h2 id="p3">第三部分：编写 PCT-100 上位机</h2>
+<p>理解了 Electron 如何联通前后端后，现在开始编写真正的 PCT-100 上位机。它通过 MQTT 与 ESP32 设备通信，实现数据监控和继电器控制。</p>
+
+<h3 id="p3-1">3.1 项目结构</h3>
+<pre><code>pc/
+&#x251C;&#x2500; package.json          # 项目配置、依赖
+&#x251C;&#x2500; main.js               # 主进程（窗口管理 + MQTT）
+&#x251C;&#x2500; preload.js            # 进程桥接
+&#x251C;&#x2500; index.html            # 渲染进程（界面）
+&#x251C;&#x2500; css/
+&#x2502;   &#x2514;&#x2500; style.css         # 样式
+&#x251C;&#x2500; js/
+&#x2502;   &#x2514;&#x2500; app.js            # 渲染进程逻辑
+&#x2514;&#x2500; dist/                 # 打包输出目录</code></pre>
+
+<h3 id="p3-2">3.2 初始化项目</h3>
+<pre><code class="language-bash">mkdir pc
+cd pc
+npm init -y
+npm install mqtt
+npm install --save-dev electron</code></pre>
+
+<h3 id="p3-3">3.3 package.json</h3>
+<pre><code class="language-json">{
+  "name": "pct100-control",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "mqtt": "^5.3.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}</code></pre>
+
+<h3 id="p3-4">3.4 项目文件说明</h3>
+<p>每个文件的作用：</p>
+<table>
+  <tr><th>文件</th><th>运行环境</th><th>职责</th></tr>
+  <tr><td><code>main.js</code></td><td>主进程（Node.js）</td><td>创建窗口、管理 MQTT 连接</td></tr>
+  <tr><td><code>preload.js</code></td><td>桥梁</td><td>把主进程功能暴露给渲染进程</td></tr>
+  <tr><td><code>index.html</code></td><td>渲染进程（浏览器）</td><td>界面结构和元素</td></tr>
+  <tr><td><code>css/style.css</code></td><td>渲染进程</td><td>界面样式</td></tr>
+  <tr><td><code>js/app.js</code></td><td>渲染进程</td><td>界面交互逻辑</td></tr>
+  <tr><td><code>package.json</code></td><td>-</td><td>项目配置和依赖</td></tr>
+</table>
+
+<h3 id="p3-5">3.5 用 AI 生成代码</h3>
+<p>参考上表项目文件说明，把每个文件的需求逐一发给 AI，让其生成对应代码。例如告诉 AI"生成一个 Electron 主进程 main.js，创建窗口、连接 MQTT、处理 IPC 通信"即可。将生成的文件放入对应位置后，运行 <code>npm start</code> 验证。</p>
+
+<h3 id="p3-6">3.6 启动预览与迭代开发</h3>
+<pre><code class="language-bash">npm start</code></pre>
+<p>如果一切正常，会弹出 PCT-100 上位机窗口。但这只是第一版——开发过程是 <strong>预览 &rarr; 修改代码 &rarr; 再预览</strong> 的循环，可能要重复很多次才能得到可用的产品。每修改完代码，关闭窗口重新 <code>npm start</code> 即可看到最新效果。</p>
+<img src="images/10-pct100-client.png" alt="PCT-100 上位机窗口">
+
+<hr>
+
+<h2 id="p4">第四部分：打包上位机为 exe</h2>
+<p>上位机代码已经完成，现在用 electron-builder 把它打包成独立的 Windows 便携 exe。</p>
+
+<h3 id="p4-1">4.1 安装打包工具</h3>
+<pre><code class="language-bash">npm install --save-dev electron-builder</code></pre>
+
+<h3 id="p4-2">4.2 更新 package.json</h3>
+<p>添加 <code>dist</code> 脚本和 <code>build</code> 配置：</p>
+<pre><code class="language-json">{
+  "name": "pct100-control",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.pct100.control",
+    "productName": "PCT-100 过程控制终端",
+    "asar": false,
+    "win": { "target": ["portable"] }
+  },
+  "dependencies": {
+    "mqtt": "^5.3.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^26.0.0"
+  }
+}</code></pre>
+
+<h3 id="p4-3">4.3 打包原理</h3>
+<p>electron-builder 的工作流程：</p>
+<ol>
+  <li>下载 Electron 内核（约 50MB）</li>
+  <li>将你的代码和 node_modules 打包在一起</li>
+  <li>生成一个独立的可执行文件（含所有依赖）</li>
+</ol>
+
+<h3 id="p4-4">4.4 执行打包</h3>
+<p>国内用户先设置镜像源，下载速度会快很多：</p>
+<pre><code class="language-powershell">$env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
+npm run dist</code></pre>
+<p>第一次打包会下载 Electron，国内镜像约 1-2 分钟。完成后生成：</p>
+<pre><code>dist/PCT-100 过程控制终端 1.0.0.exe</code></pre>
+
+<h3 id="p4-5">4.5 使用打包后的 exe</h3>
+<ul>
+  <li>直接双击运行，无需安装</li>
+  <li>可以放在 U 盘里带走</li>
+  <li>到任意 Windows 电脑上直接使用</li>
+</ul>
+
+<h3 id="p4-6">4.6 重要配置项说明</h3>
+<table>
+  <tr><th>配置</th><th>含义</th><th>为什么这么设</th></tr>
+  <tr><td><code>protocolVersion: 4</code></td><td>MQTT 3.1.1 协议</td><td>EMQX 不支持 MQTT 5.0</td></tr>
+  <tr><td><code>asar: false</code></td><td>不压缩资源文件</td><td>mqtt 包在 asar 内可能出问题</td></tr>
+  <tr><td><code>contextIsolation: true</code></td><td>隔离渲染进程上下文</td><td>安全最佳实践</td></tr>
+  <tr><td><code>portable</code></td><td>打包成免安装 exe</td><td>学生电脑无需管理员权限</td></tr>
+</table>
+
+<hr>
+
+<h2 id="faq">常见问题</h2>
+<p><strong>Q: npm install 报错？</strong><br>A: 检查网络；尝试 <code>npm config set registry https://registry.npmmirror.com</code> 切换国内镜像。</p>
+<p><strong>Q: Electron 窗口白屏？</strong><br>A: 检查 main.js 中 <code>loadFile('index.html')</code> 路径是否正确。</p>
+<p><strong>Q: MQTT 连不上？</strong><br>A: 检查服务器地址和端口；检查设备是否在线；EMQX 需要 <code>protocolVersion: 4</code>。</p>
+<p><strong>Q: 打包报错 sign 失败？</strong><br>A: 在 <code>build.win</code> 中添加 <code>"signAndEditExecutable": false</code>。</p>
+<p><strong>Q: 打包后 exe 运行报错？</strong><br>A: 确保 <code>asar: false</code>；检查 <code>node_modules</code> 是否完整。</p>
+
+<hr>
+
+<h2 id="summary">本课总结</h2>
+<table>
+  <tr><th>知识点</th><th>掌握程度</th></tr>
+  <tr><td>Node.js 基本概念</td><td>理解运行时、npm、package.json</td></tr>
+  <tr><td>Node.js 小实验</td><td>能独立编写和运行 CLI 程序</td></tr>
+  <tr><td>Electron 架构</td><td>理解主进程/渲染进程/preload 如何联通前后端</td></tr>
+  <tr><td>PCT-100 上位机</td><td>能完整编写 MQTT 通信的上位机</td></tr>
+  <tr><td>打包部署</td><td>能独立打包出 Windows 便携 exe</td></tr>
+</table>
+<p>通过两课时的学习，你已经掌握了从网页开发到桌面应用的完整技能链！</p>
+
+  </div>
+</div>
+
+<!-- highlight.js syntax highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+
+<!-- highlight active sidebar item -->
+<script>
+(function() {
+  var links = document.querySelectorAll('.sidebar a');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var id = entry.target.id;
+        links.forEach(function(a) {
+          a.classList.remove('active');
+          if (a.getAttribute('href') === '#' + id) a.classList.add('active');
+        });
+      }
+    });
+  }, { rootMargin: '-80px 0px -60% 0px' });
+  document.querySelectorAll('h1[id],h2[id],h3[id]').forEach(function(el) { observer.observe(el); });
+})();
+</script>
+</body>
+</html>
